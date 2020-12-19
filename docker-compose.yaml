@@ -2,6 +2,6 @@ version: "3.9"
 
 services:
     conway:
-        image: "xheradon/conway:0.1"
+        image: "xheradon/conway:0.2"
         build: .
         tty: true
