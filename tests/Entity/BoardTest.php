@@ -52,6 +52,13 @@ final class BoardTest extends TestCase
         Board::createFromInitialRows([[]]);
     }
 
+    public function testRowsWithDifferentWidthThrowsException(): void
+    {
+        $this->expectException(InvalidWidthException::class);
+
+        Board::createFromInitialRows([[0,0],[0]]);
+    }
+
     public function testInitialRowsAreCorrectlySet(): void
     {
         $initialMatrix = [

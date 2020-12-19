@@ -39,6 +39,12 @@ class Board
         }
     }
 
+    /**
+     * @param array $initialRows
+     * @return Board
+     * @throws InvalidHeightException when height < 1
+     * @throws InvalidWidthException when width < 1 or the rows doesn't have the same number of columns
+     */
     public static function createFromInitialRows(array $initialRows): Board
     {
         if (($height = \count($initialRows)) < 1)
@@ -46,6 +52,11 @@ class Board
 
         if (($width = \count($initialRows[0])) < 1)
             throw new InvalidWidthException();
+
+        foreach ($initialRows as $row) {
+            if (\count($row) !== $width)
+                throw new InvalidWidthException();
+        }
 
         $board = new Board($height, $width, false);
         $board->rows = $initialRows;
