@@ -3,13 +3,10 @@
 
 namespace Conway\Entity;
 
-
-use Conway\Exception\HeightMismatchException;
 use Conway\Exception\InvalidColException;
 use Conway\Exception\InvalidHeightException;
 use Conway\Exception\InvalidRowException;
 use Conway\Exception\InvalidWidthException;
-use Conway\Exception\WidthMismatchException;
 
 class Board
 {
@@ -21,18 +18,16 @@ class Board
      * Board constructor.
      * @param int $height of the matrix
      * @param int $width of the matrix
-     * @param array $initialRows a predetermined set of rows
+     * @param bool $random enables or disables random generation of rows
      * @throws InvalidHeightException when height < 1
      * @throws InvalidWidthException when width < 1
-     * @throws HeightMismatchException when the given height and the height of the initial rows doesn't match
-     * @throws WidthMismatchException when the given width and the width of the initial rows doesn't match
      */
-    public function __construct(int $height = 5, int $width = 5, array $initialRows = [])
+    public function __construct(int $height = 5, int $width = 5, bool $random = true)
     {
         $this->setHeight($height);
         $this->setWidth($width);
 
-        if (\count($initialRows) === 0) {
+        if ($random) {
             // initialize the board with random values until we fill it
             for ($x = 0; $x < $this->height; $x++) {
                 $row = [];
@@ -41,14 +36,61 @@ class Board
                 }
                 $this->rows[$x] = $row;
             }
-        } else {
-            if (\count($initialRows) !== $this->height)
-                throw new HeightMismatchException();
-            if (\count($initialRows[0]) !== $this->width)
-                throw new WidthMismatchException();
-
-            $this->rows = $initialRows;
         }
+    }
+
+    public static function createFromInitialRows(array $initialRows): Board
+    {
+        if (($height = \count($initialRows)) < 1)
+            throw new InvalidHeightException();
+
+        if (($width = \count($initialRows[0])) < 1)
+            throw new InvalidWidthException();
+
+        $board = new Board($height, $width, false);
+        $board->rows = $initialRows;
+        return $board;
+    }
+
+    /**
+     * Any live cell with fewer than two live neighbours dies, as if caused by under-population.
+     * Any live cell with two or three live neighbours lives on to the next generation.
+     * Any live cell with more than three live neighbours dies, as if by overcrowding.
+     * Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+     *
+     *
+     * @param Board $previousBoard
+     * @param bool $loop
+     * @return Board
+     * @throws InvalidColException
+     * @throws InvalidHeightException
+     * @throws InvalidRowException
+     * @throws InvalidWidthException
+     */
+    public static function createFromPreviousGeneration(Board $previousBoard, bool $loop = false): Board
+    {
+        $rows = \range(0, $previousBoard->getHeight() - 1);
+        foreach ($previousBoard->rows as $rowIndex => $row) {
+            $rows[$rowIndex] = \range(0, $previousBoard->getWidth() - 1);
+            foreach ($row as $colIndex => $col) {
+                $activeNeightbours = $loop
+                    ? $previousBoard->countActiveNeighbours($rowIndex, $colIndex)
+                    : $previousBoard->countActiveNeighboursFinite($rowIndex, $colIndex);
+
+                if ($col) { // live cells
+                    if (\in_array($activeNeightbours, [2, 3])) // Any live cell with two or three live neighbours lives on to the next generation.
+                        $col = 1;
+                    else // Any live cell with fewer than two live neighbours dies, as if caused by under-population. Any live cell with more than three live neighbours dies, as if by overcrowding.
+                        $col = 0;
+                } elseif ($activeNeightbours === 3) { // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+                    $col = 1;
+                }
+
+                $rows[$rowIndex][$colIndex] = $col;
+            }
+        }
+
+        return Board::createFromInitialRows($rows);
     }
 
     /**
@@ -174,48 +216,5 @@ class Board
 
         if ($col < 0 || $col >= $this->width)
             throw new InvalidColException();
-    }
-
-    /**
-     * Any live cell with fewer than two live neighbours dies, as if caused by under-population.
-     * Any live cell with two or three live neighbours lives on to the next generation.
-     * Any live cell with more than three live neighbours dies, as if by overcrowding.
-     * Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-     *
-     *
-     * @param Board $previousBoard
-     * @param bool $loop
-     * @return Board
-     * @throws HeightMismatchException
-     * @throws InvalidColException
-     * @throws InvalidHeightException
-     * @throws InvalidRowException
-     * @throws InvalidWidthException
-     * @throws WidthMismatchException
-     */
-    public static function createFromPreviousGeneration(Board $previousBoard, bool $loop = false): Board
-    {
-        $rows = \range(0, $previousBoard->getHeight() - 1);
-        foreach ($previousBoard->rows as $rowIndex => $row) {
-            $rows[$rowIndex] = \range(0, $previousBoard->getWidth() - 1);
-            foreach ($row as $colIndex => $col) {
-                $activeNeightbours = $loop
-                    ? $previousBoard->countActiveNeighbours($rowIndex, $colIndex)
-                    : $previousBoard->countActiveNeighboursFinite($rowIndex, $colIndex);
-
-                if ($col) { // live cells
-                    if (\in_array($activeNeightbours, [2, 3])) // Any live cell with two or three live neighbours lives on to the next generation.
-                        $col = 1;
-                    else // Any live cell with fewer than two live neighbours dies, as if caused by under-population. Any live cell with more than three live neighbours dies, as if by overcrowding.
-                        $col = 0;
-                } elseif ($activeNeightbours === 3) { // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
-                    $col = 1;
-                }
-
-                $rows[$rowIndex][$colIndex] = $col;
-            }
-        }
-
-        return new Board($previousBoard->getHeight(), $previousBoard->getWidth(), $rows);
     }
 }

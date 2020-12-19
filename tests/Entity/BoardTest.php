@@ -3,12 +3,10 @@
 namespace Conway\Tests\Entity;
 
 use Conway\Entity\Board;
-use Conway\Exception\HeightMismatchException;
 use Conway\Exception\InvalidColException;
 use Conway\Exception\InvalidHeightException;
 use Conway\Exception\InvalidRowException;
 use Conway\Exception\InvalidWidthException;
-use Conway\Exception\WidthMismatchException;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -24,14 +22,14 @@ final class BoardTest extends TestCase
     {
         $this->expectException(InvalidHeightException::class);
 
-        $b = new Board(0);
+        new Board(0);
     }
 
-    public function testHeightMismatchThrowsException(): void
+    public function testInvalidInitialHeightThrowsException(): void
     {
-        $this->expectException(HeightMismatchException::class);
+        $this->expectException(InvalidHeightException::class);
 
-        $b = new Board(2, 1, [[0]]);
+        Board::createFromInitialRows([]);
     }
 
     public function testDefaultWidthIsGreaterThanZero(): void
@@ -44,32 +42,35 @@ final class BoardTest extends TestCase
     {
         $this->expectException(InvalidWidthException::class);
 
-        $b = new Board(5, 0);
+        new Board(5, 0);
     }
 
-    public function testWidthMismatchThrowsException(): void
+    public function testInvalidInitialWidthThrowsException(): void
     {
-        $this->expectException(WidthMismatchException::class);
+        $this->expectException(InvalidWidthException::class);
 
-        $b = new Board(1, 2, [[0]]);
+        Board::createFromInitialRows([[]]);
     }
 
     public function testInitialRowsAreCorrectlySet(): void
     {
-        $initialRows = [[0, 1], [0, 1]];
-        $b = new Board(2, 2, $initialRows);
-        $this->assertEquals($initialRows, $b->rows);
+        $initialMatrix = [
+            [0, 1],
+            [0, 1]
+        ];
+        $b = Board::createFromInitialRows($initialMatrix);
+        $this->assertEquals($initialMatrix, $b->rows);
     }
 
     public function testRowZeroColZeroHasExaclyThreeNeighboursFinite(): void
     {
-        $initialRows = [
+        $initialMatrix = [
             [1, 1, 0],
             [1, 1, 0],
             [0, 0, 0]
         ];
 
-        $b = new Board(3, 3, $initialRows);
+        $b = Board::createFromInitialRows($initialMatrix);
 
         $method = new ReflectionMethod($b, 'countActiveNeighboursFinite');
         $method->setAccessible(true);
@@ -79,13 +80,13 @@ final class BoardTest extends TestCase
 
     public function testRowZeroColZeroHasExactlyThreeNeighboursInifinite(): void
     {
-        $initialRows = [
+        $initialMatrix = [
             [1, 0, 1],
             [0, 0, 0],
             [1, 1, 0]
         ];
 
-        $b = new Board(3, 3, $initialRows);
+        $b = Board::createFromInitialRows($initialMatrix);
 
         $method = new ReflectionMethod($b, 'countActiveNeighbours');
         $method->setAccessible(true);
@@ -123,7 +124,7 @@ final class BoardTest extends TestCase
             [0, 0, 0],
         ];
 
-        $initialGeneration = new Board(3, 3, $initialMatrix);
+        $initialGeneration = Board::createFromInitialRows($initialMatrix);
         $firstGeneration = Board::createFromPreviousGeneration($initialGeneration);
 
         $this->assertEquals(1, $firstGeneration->rows[0][0]);
@@ -137,7 +138,7 @@ final class BoardTest extends TestCase
             [0, 0, 0],
         ];
 
-        $initialGeneration = new Board(3, 3, $initialMatrix);
+        $initialGeneration = Board::createFromInitialRows($initialMatrix);
         $firstGeneration = Board::createFromPreviousGeneration($initialGeneration);
 
         $this->assertEquals(1, $firstGeneration->rows[0][0]);
@@ -151,7 +152,7 @@ final class BoardTest extends TestCase
             [0, 0, 0],
         ];
 
-        $initialGeneration = new Board(3, 3, $initialMatrix);
+        $initialGeneration = Board::createFromInitialRows($initialMatrix);
         $firstGeneration = Board::createFromPreviousGeneration($initialGeneration);
 
         $this->assertEquals(0, $firstGeneration->rows[0][0]);
@@ -166,7 +167,7 @@ final class BoardTest extends TestCase
             [1, 1, 1],
         ];
 
-        $initialGeneration = new Board(3, 3, $initialMatrix);
+        $initialGeneration = Board::createFromInitialRows($initialMatrix);
         $firstGeneration = Board::createFromPreviousGeneration($initialGeneration);
 
         $this->assertEquals(0, $firstGeneration->rows[1][1]);
@@ -181,7 +182,7 @@ final class BoardTest extends TestCase
             [0, 0, 0, 0]
         ];
 
-        $initialGeneration = new Board(4, 4, $initialMatrix);
+        $initialGeneration = Board::createFromInitialRows($initialMatrix);
         $firstGeneration = Board::createFromPreviousGeneration($initialGeneration);
 
         $this->assertEquals(1, $firstGeneration->rows[0][0]);
