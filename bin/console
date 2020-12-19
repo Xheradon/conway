@@ -1,0 +1,19 @@
+#!/usr/bin/env php
+<?php
+
+use Symfony\Component\Console\Application;
+use Conway\Command\ConwayCommand;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+
+// disable php default time limit for the console
+set_time_limit(0);
+
+$application = new Application("Conway's game of life", "0.1");
+$command = new ConwayCommand();
+
+// register the command
+$application->add($command);
+$application->setDefaultCommand($command->getName(), true);
+$application->run();
