@@ -10,7 +10,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 // disable php default time limit for the console
 set_time_limit(0);
 
-$application = new Application("Conway's game of life", "0.2");
+$application = new Application("Conway's game of life", "0.3");
 $command = new ConwayCommand();
 
 // register the command
